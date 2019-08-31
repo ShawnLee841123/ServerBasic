@@ -1,0 +1,114 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Include">
+      <UniqueIdentifier>{f16ad0bf-43f2-4749-87f6-a5d53408589c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{61f23108-8b80-4d14-b52f-1204aad00b8e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Common">
+      <UniqueIdentifier>{5820a80a-ac5b-4324-a481-007604b4d2c8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Windows">
+      <UniqueIdentifier>{c74bf948-d58a-4d08-85d8-e79f8179c4b6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Common">
+      <UniqueIdentifier>{41980a37-a0e6-4d39-bfdf-861a749f8c5b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Windows">
+      <UniqueIdentifier>{b2db9896-9737-4357-a997-6541e090da9d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\System">
+      <UniqueIdentifier>{cf2010f0-2b05-44bf-b9f7-a859b6f88aa1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\System">
+      <UniqueIdentifier>{ec49923a-4ea2-4e41-8a24-6e49e4e7d3b6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Common\tools.h">
+      <Filter>Include\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Common\TypeDefines.h">
+      <Filter>Include\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Common\UnLockQueue.h">
+      <Filter>Include\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Common\StandardUnLockElement.h">
+      <Filter>Include\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Common\LibThreadBase.h">
+      <Filter>Include\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Common\LogThreadBase.h">
+      <Filter>Include\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Windows\WindowsFileSystem.h">
+      <Filter>Include\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Windows\WindowsTimeSystem.h">
+      <Filter>Include\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\System\FileSystem.h">
+      <Filter>Include\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\System\TimeSystem.h">
+      <Filter>Include\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Common\UnLockElementTypeDefine.h">
+      <Filter>Include\Common</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Common\tools.cpp">
+      <Filter>Source\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Common\UnLockQueue.cpp">
+      <Filter>Source\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Common\StandardUnLockElement.cpp">
+      <Filter>Source\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Common\LibThreadBase.cpp">
+      <Filter>Source\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Common\LogThreadBase.cpp">
+      <Filter>Source\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Windows\WindowsFileSystem.cpp">
+      <Filter>Source\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Windows\WindowsTimeSystem.cpp">
+      <Filter>Source\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\System\FileSystem.cpp">
+      <Filter>Source\System</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\System\TimeSystem.cpp">
+      <Filter>Source\System</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

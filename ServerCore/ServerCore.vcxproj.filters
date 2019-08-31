@@ -1,0 +1,71 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Interface">
+      <UniqueIdentifier>{ab726300-f042-4818-8d46-f26cc904fcd8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ServerCoreBase">
+      <UniqueIdentifier>{949d3e53-f5e4-4fe6-b7aa-525834b445ec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PortCompletion">
+      <UniqueIdentifier>{c8305f88-07da-4ac5-90af-063f27eca011}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ServerCore.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ServerCoreRoot\ServerCoreBase.cpp">
+      <Filter>ServerCoreBase</Filter>
+    </ClCompile>
+    <ClCompile Include="PortCompletion\PortCompleteBaseDefine.cpp">
+      <Filter>PortCompletion</Filter>
+    </ClCompile>
+    <ClCompile Include="PortCompletion\PortCompleteCore.cpp">
+      <Filter>PortCompletion</Filter>
+    </ClCompile>
+    <ClCompile Include="PortCompletion\PortCompleteQueueElement.cpp">
+      <Filter>PortCompletion</Filter>
+    </ClCompile>
+    <ClCompile Include="PortCompletion\PortCompleteWorker.cpp">
+      <Filter>PortCompletion</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Interface\ILogCore.h">
+      <Filter>Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Interface\IServerCore.h">
+      <Filter>Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="ServerCoreRoot\ServerCoreBase.h">
+      <Filter>ServerCoreBase</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Interface\ICompletionPort.h">
+      <Filter>Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="PortCompletion\PortCompleteBaseDefine.h">
+      <Filter>PortCompletion</Filter>
+    </ClInclude>
+    <ClInclude Include="PortCompletion\PortCompleteCore.h">
+      <Filter>PortCompletion</Filter>
+    </ClInclude>
+    <ClInclude Include="PortCompletion\PortCompleteQueueElement.h">
+      <Filter>PortCompletion</Filter>
+    </ClInclude>
+    <ClInclude Include="PortCompletion\PortCompleteQueueElementDataDefine.h">
+      <Filter>PortCompletion</Filter>
+    </ClInclude>
+    <ClInclude Include="PortCompletion\PortCompleteWorker.h">
+      <Filter>PortCompletion</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
