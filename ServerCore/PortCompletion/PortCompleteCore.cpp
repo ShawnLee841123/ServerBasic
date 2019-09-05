@@ -46,6 +46,10 @@ bool PortCompleteCore::OnInitialize()
 	bRet &= ServerCoreBase::OnInitialize();
 
 #ifdef _WIN_
+	//	初始化Sockect
+	WSADATA wsaData;
+	WSAStartup(MAKEWORD(2, 2), &wsaData);
+
 	m_pCompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
 	if (nullptr == m_pCompletionPort)
 	{
@@ -60,12 +64,13 @@ bool PortCompleteCore::OnInitialize()
 	{
 		m_arrWorkThread[i] = new PortCompleteWorker();
 		bRet &= m_arrWorkThread[i]->SetCompletionPort(m_pCompletionPort);
-		bRet &= m_arrWorkThread[i]->OnThreadInitialize(50);
-
+		
 		//	打开工作线程的各个功能
 		m_arrWorkThread[i]->WorkFunctionEnable(EPCTFT_LISTEN, true);
 		m_arrWorkThread[i]->WorkFunctionEnable(EPCTFT_RECV, true);
 		m_arrWorkThread[i]->WorkFunctionEnable(EPCTFT_SEND, true);
+	
+		bRet &= m_arrWorkThread[i]->OnThreadInitialize(0);
 	}
 #pragma endregion
 
@@ -136,6 +141,7 @@ bool PortCompleteCore::OnDestroy()
 #ifdef _WIN_
 	bRet &= ClearAllSockContext();
 #endif
+	WSACleanup();
 	return bRet;
 }
 #pragma endregion
@@ -363,7 +369,6 @@ bool PortCompleteCore::OnSocketRegister(UnLockQueueDataElementBase* pElement)
 
 	if (nullptr == pData->pSocketContext)
 		return false;
-
 
 	//PortCompleteSocketInfo* pInfo = new PortCompleteSocketInfo();
 	//pInfo->pSocket = pData->pSocket;

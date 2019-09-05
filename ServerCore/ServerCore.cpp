@@ -18,12 +18,17 @@ int main()
 	//}
 	//oBase.Destroy();
 	PortCompleteCore oCore;
-	oCore.Initialize(nullptr);
-	oCore.Start();
+	if (!oCore.Initialize(nullptr))
+		return 0;
+
+	if (oCore.Start())
+		return 0;
+
 	while (true)
 	{
 		oCore.Tick(0);
 	}
+
 	oCore.Destroy();
 
 	return 0;

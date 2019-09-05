@@ -39,6 +39,18 @@ bool PortCompleteWorker::SetCompletionPort(void* pPort)
 	return (nullptr == m_pCompletionPort);
 }
 
+bool PortCompleteWorker::OnThreadInitialize(int nTickTime)
+{
+	bool bRet = true;
+	bRet &= ThreadBase::OnThreadInitialize(nTickTime);
+#ifdef _WIN_
+	if (CheckFunctionEnable(EPCTFT_LISTEN))
+		bRet &= InitialListenSocket();
+#endif
+
+	return bRet;
+}
+
 bool PortCompleteWorker::OnThreadRunning()
 {
 	bool bRet = true;
@@ -64,7 +76,7 @@ bool PortCompleteWorker::OnThreadDestroy()
 bool PortCompleteWorker::WorkFunctionEnable(PortCompletionThreadFunctionMask eMask, bool bEnable)
 {
 	uint32 uFlag = bEnable ? 1 : 0;
-	m_uThreadFunc &= (uFlag << eMask);
+	m_uThreadFunc |= (uFlag << eMask);
 
 	return true;
 }
@@ -152,28 +164,36 @@ bool PortCompleteWorker::InitialListenSocket()
 	//	Create listen socket
 	m_pListenContext = new OPERATE_SOCKET_CONTEXT();
 	m_pListenContext->link = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+	//	如果错误号为10093，先确认是否初始化socket
 	if (INVALID_SOCKET == m_pListenContext->link)
 	{
-		THREAD_ERROR("Thread Create Listen Socket Faild. Error Code[%d]", WSAGetLastError());
+		int nError = WSAGetLastError();
+		THREAD_ERROR("Thread Create Listen Socket Faild. Error Code[%d]", nError);
 		return false;
 	}
 
 	//	bind listen socket to completion port
 	if (nullptr == CreateIoCompletionPort((HANDLE)m_pListenContext->link, m_pCompletionPort, (DWORD)m_pListenContext, 0))
 	{
-		THREAD_ERROR("Bind listen socket to completion port faild. Error Code[%d]", WSAGetLastError());
+		int nError = WSAGetLastError();
+		THREAD_ERROR("Bind listen socket to completion port faild. Error Code[%d]", nError);
 		SAFE_RELEASE_SOCKET(m_pListenContext->link);
 		return false;
 	}
 
 	//	bind listen socket to server address
 	sockaddr_in serverAddr;
-	ZeroMemory((char*)&serverAddr, sizeof(sockaddr_in));
-	inet_pton(AF_INET, "10.53.3.212:11111", &serverAddr);
+	ZeroMemory(&serverAddr, sizeof(sockaddr_in));
+	//	字符串转Socket地址(地址不能带有端口号，不然报错)
+	inet_pton(AF_INET, "10.53.3.212", &(serverAddr.sin_addr));
+	serverAddr.sin_port = htons(11111);
+	//	family一定要设置，不然就10047了
+	serverAddr.sin_family = AF_INET;
 
-	if (SOCKET_ERROR == bind(m_pListenContext->link, (sockaddr*)&serverAddr, sizeof(SOCKADDR_IN)))
+	if (SOCKET_ERROR == bind(m_pListenContext->link, (SOCKADDR*)&(serverAddr), sizeof(SOCKADDR)))
 	{
-		THREAD_ERROR("Can not bind listen socket to server address.");
+		int nError = WSAGetLastError();
+		THREAD_ERROR("Can not bind listen socket to server address. Error Code[%d]", nError);
 		SAFE_RELEASE_SOCKET(m_pListenContext->link);
 		return false;
 	}
@@ -183,7 +203,8 @@ bool PortCompleteWorker::InitialListenSocket()
 	DWORD dwBytes = 0;
 	if (SOCKET_ERROR == WSAIoctl(m_pListenContext->link, SIO_GET_EXTENSION_FUNCTION_POINTER, &guidAcceptEx, sizeof(guidAcceptEx), &m_pFnAcceptEx, sizeof(m_pFnAcceptEx), &dwBytes, NULL, NULL))
 	{
-		THREAD_ERROR("Can not get Function[AcceptEx] pointer. Error code[%d]", WSAGetLastError());
+		int nError = WSAGetLastError();
+		THREAD_ERROR("Can not get Function[AcceptEx] pointer. Error code[%d]", nError);
 		SAFE_RELEASE_SOCKET(m_pListenContext->link);
 		return false;
 	}
@@ -193,7 +214,8 @@ bool PortCompleteWorker::InitialListenSocket()
 	if (SOCKET_ERROR == WSAIoctl(m_pListenContext->link, SIO_GET_EXTENSION_FUNCTION_POINTER, &guidGetAcceptExSockAddrs, sizeof(guidGetAcceptExSockAddrs),
 		&m_pFnGetAcceptExSockAddrs, sizeof(m_pFnGetAcceptExSockAddrs), &dwBytes, NULL, NULL))
 	{
-		THREAD_ERROR("Can not get Function[GetAcceptExSockAddrs] pointer. Error code[%d]", WSAGetLastError());
+		int nError = WSAGetLastError();
+		THREAD_ERROR("Can not get Function[GetAcceptExSockAddrs] pointer. Error code[%d]", nError);
 		SAFE_RELEASE_SOCKET(m_pListenContext->link);
 		return false;
 	}
@@ -208,7 +230,8 @@ bool PortCompleteWorker::StartListenConnect()
 
 	if (SOCKET_ERROR == listen(m_pListenContext->link, LISTEN_LINK_COUNT))
 	{
-		THREAD_ERROR("Thread Start Listen Error");
+		int nError = WSAGetLastError();
+		THREAD_ERROR("Thread Start Listen Error[%d]", nError);
 		return false;
 	}
 

@@ -21,6 +21,7 @@ public:
 	~PortCompleteWorker();
 
 	virtual bool SetCompletionPort(void* pPort);
+	virtual bool OnThreadInitialize(int nTickTime) override;
 	virtual bool OnThreadRunning() override;
 	virtual bool OnThreadDestroy() override;
 	virtual bool WorkFunctionEnable(PortCompletionThreadFunctionMask eMask, bool bEnable);

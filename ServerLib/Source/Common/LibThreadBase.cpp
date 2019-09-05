@@ -58,6 +58,7 @@ bool ThreadBase::OnThreadInitialize(int nTickTime)
 bool ThreadBase::OnThreadStart(int nThreadID)
 {
 	//m_nThreadID = nThreadID;
+	THREAD_MSG("Thread[%d] On start", m_nThreadID);
 	m_eCurStatus = ESTST_START;
 	m_Thread = std::thread(&ThreadBase::ThreadTick, this);
 	return true;
@@ -122,7 +123,6 @@ void ThreadBase::ThreadTick()
 {
 	while (m_eCurStatus >= ESTST_START && m_eCurStatus < ESTST_DESTROIED)
 	{
-		
 		if (m_uLastTimeStamp == 0)
 			m_uLastTimeStamp = GetTimeStamp();
 

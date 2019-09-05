@@ -286,7 +286,7 @@ bool ServerCoreBase::OnTick(int nElapse)
 			bRet &= iter->second->Tick(nElapse);
 		}
 	}
-	CORE_MSG("Server Core Tick");
+	//CORE_MSG("Server Core Tick");
 	return bRet;
 }
 
