@@ -160,6 +160,12 @@ bool ThreadBase::ReadQueueProcess(int nElapse)
 		do 
 		{
 			UnLockQueueElementBase* pElement = pQueue->PopQueueElement(eRet);
+			if (nullptr == pElement)
+			{
+				THREAD_MSG("Empty Thread[%d] Queue[%s]", m_nThreadID, iter->first.c_str());
+				break;
+			}
+
 			if (!OnQueueElement(pElement))
 			{
 				eRet = EQORT_POP_INVALID_ELEMENT;

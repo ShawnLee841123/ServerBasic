@@ -97,7 +97,7 @@ bool PortCompleteWorker::RegisterConnectSocket(OPERATE_SOCKET_CONTEXT* pSocketCo
 
 bool PortCompleteWorker::OnWorkerMainLoop(int nElapse)
 {
-	BOOL bRet = GetQueuedCompletionStatus(m_pCompletionPort, (LPDWORD)&m_dwBytesTransfered, (PULONG_PTR)&m_pLoopSockContext, (LPOVERLAPPED*)&m_pLoopOverlapped, INFINITY);
+	BOOL bRet = GetQueuedCompletionStatus(m_pCompletionPort, (LPDWORD)&m_dwBytesTransfered, (PULONG_PTR)&m_pLoopSockContext, (LPOVERLAPPED*)&m_pLoopOverlapped, INFINITE);
 	if (!bRet)
 	{
 		THREAD_ERROR("[PortCompleteWorker::OnWorkerMainLoop] Get completion port status faild. Error code[%d]", WSAGetLastError());
