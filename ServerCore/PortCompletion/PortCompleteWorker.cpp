@@ -117,6 +117,7 @@ bool PortCompleteWorker::OnWorkerMainLoop(int nElapse)
 	BOOL bRet = GetQueuedCompletionStatus(m_pCompletionPort, (LPDWORD)&m_dwBytesTransfered, (PULONG_PTR)&m_pLoopSockContext, (LPOVERLAPPED*)&m_pLoopOverlapped, INFINITE);
 	if (!bRet)
 	{
+		//	测试程序只是些了链接，完成就断开了。这里会返回错误64，客户端断开
 		THREAD_ERROR("[PortCompleteWorker::OnWorkerMainLoop] Get completion port status faild. Error code[%d]", WSAGetLastError());
 		return false;
 	}
