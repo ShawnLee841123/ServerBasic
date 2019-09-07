@@ -19,7 +19,6 @@ _PER_IO_CONTEXT& _PER_IO_CONTEXT::operator=(const _PER_IO_CONTEXT rhv)
 	datalength = rhv.datalength;
 	link = rhv.link;
 	operateType = rhv.operateType;
-	memcpy(&buffer, &(rhv.buffer), sizeof(WSABUF));
 	memcpy(&overlap, &(rhv.overlap), sizeof(WSAOVERLAPPED));
 	memcpy(&databuf, &(rhv.databuf), sizeof(IO_BUFFER_SIZE));
 	return *this;
@@ -33,7 +32,8 @@ void _PER_IO_CONTEXT::ResetDataBuff()
 
 void _PER_IO_CONTEXT::ResetOverlapBuff()
 {
-	ZeroMemory(&buffer, sizeof(WSABUF));
+	buffer.buf = databuf;
+	buffer.len = IO_BUFFER_SIZE;
 	ZeroMemory(&overlap, sizeof(WSAOVERLAPPED));
 }
 

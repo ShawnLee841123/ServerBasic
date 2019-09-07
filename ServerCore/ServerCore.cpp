@@ -21,7 +21,7 @@ int main()
 	if (!oCore.Initialize(nullptr))
 		return 0;
 
-	if (oCore.Start())
+	if (!oCore.Start())
 		return 0;
 
 	while (true)

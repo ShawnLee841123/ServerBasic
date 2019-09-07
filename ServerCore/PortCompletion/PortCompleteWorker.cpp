@@ -36,7 +36,7 @@ bool PortCompleteWorker::SetCompletionPort(void* pPort)
 		return false;
 
 	m_pCompletionPort = pPort;
-	return (nullptr == m_pCompletionPort);
+	return (nullptr != m_pCompletionPort);
 }
 
 bool PortCompleteWorker::OnThreadInitialize(int nTickTime)
@@ -45,7 +45,11 @@ bool PortCompleteWorker::OnThreadInitialize(int nTickTime)
 	bRet &= ThreadBase::OnThreadInitialize(nTickTime);
 #ifdef _WIN_
 	if (CheckFunctionEnable(EPCTFT_LISTEN))
+	{
 		bRet &= InitialListenSocket();
+		bRet &= StartListenConnect();
+	}
+		
 #endif
 
 	return bRet;
@@ -109,6 +113,7 @@ bool PortCompleteWorker::RegisterConnectSocket(OPERATE_SOCKET_CONTEXT* pSocketCo
 
 bool PortCompleteWorker::OnWorkerMainLoop(int nElapse)
 {
+	//	注意最后的参数，这里有一个十分类似的宏INFINITY,我们需要的是INFINITE
 	BOOL bRet = GetQueuedCompletionStatus(m_pCompletionPort, (LPDWORD)&m_dwBytesTransfered, (PULONG_PTR)&m_pLoopSockContext, (LPOVERLAPPED*)&m_pLoopOverlapped, INFINITE);
 	if (!bRet)
 	{

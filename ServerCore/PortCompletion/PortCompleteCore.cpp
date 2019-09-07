@@ -57,6 +57,7 @@ bool PortCompleteCore::OnInitialize()
 		return false;
 	}
 
+
 #endif
 
 #pragma region Initialize worker thread
@@ -66,7 +67,9 @@ bool PortCompleteCore::OnInitialize()
 		bRet &= m_arrWorkThread[i]->SetCompletionPort(m_pCompletionPort);
 		
 		//	打开工作线程的各个功能
-		m_arrWorkThread[i]->WorkFunctionEnable(EPCTFT_LISTEN, true);
+		if (i == 0)
+			m_arrWorkThread[i]->WorkFunctionEnable(EPCTFT_LISTEN, true);
+
 		m_arrWorkThread[i]->WorkFunctionEnable(EPCTFT_RECV, true);
 		m_arrWorkThread[i]->WorkFunctionEnable(EPCTFT_SEND, true);
 	
@@ -105,7 +108,7 @@ bool PortCompleteCore::OnStart()
 		ThreadRegisterLog(m_arrWorkThread[i], strLogQueueName);
 
 		//	start thread
-		m_arrWorkThread[i]->OnThreadStart(nThreadID);
+		bRet &= m_arrWorkThread[i]->OnThreadStart(nThreadID);
 	}
 
 	return bRet;
@@ -140,6 +143,12 @@ bool PortCompleteCore::OnDestroy()
 	bRet &= ClearAllLink();
 #ifdef _WIN_
 	bRet &= ClearAllSockContext();
+	if (nullptr != m_pCompletionPort && INVALID_HANDLE_VALUE != m_pCompletionPort)
+	{
+		CloseHandle(m_pCompletionPort);
+		m_pCompletionPort = nullptr;
+	}
+
 #endif
 	WSACleanup();
 	return bRet;
