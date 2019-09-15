@@ -9,6 +9,7 @@
 typedef struct _PER_IO_CONTEXT OPERATE_IO_CONTEXT;
 typedef struct _PER_SOCKET_CONTEXT OPERATE_SOCKET_CONTEXT;
 struct WSAOVERLAPPED;
+typedef struct _OVERLAPPED OVERLAPPED;
 class SocketRegisterData;
 #endif
 
@@ -55,7 +56,7 @@ protected:
 	uint32								m_dwBytesTransfered;
 
 	OPERATE_SOCKET_CONTEXT*				m_pLoopSockContext;
-	WSAOVERLAPPED*						m_pLoopOverlapped;
+	OVERLAPPED*							m_pLoopOverlapped;
 #endif
 #pragma endregion
 

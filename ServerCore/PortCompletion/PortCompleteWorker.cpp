@@ -17,6 +17,7 @@ PortCompleteWorker::PortCompleteWorker() : m_pCompletionPort(nullptr), m_uThread
 {}
 #endif
 
+#define ACCEPT_POST_MAX 10
 
 PortCompleteWorker::~PortCompleteWorker()
 {
@@ -114,6 +115,8 @@ bool PortCompleteWorker::RegisterConnectSocket(OPERATE_SOCKET_CONTEXT* pSocketCo
 bool PortCompleteWorker::OnWorkerMainLoop(int nElapse)
 {
 	//	注意最后的参数，这里有一个十分类似的宏INFINITY,我们需要的是INFINITE
+	
+	//BOOL bRet = GetQueuedCompletionStatus((HANDLE)m_pListenContext->link, (LPDWORD)&m_dwBytesTransfered, (PULONG_PTR)&m_pLoopSockContext, (LPOVERLAPPED*)&m_pLoopOverlapped, INFINITE);
 	BOOL bRet = GetQueuedCompletionStatus(m_pCompletionPort, (LPDWORD)&m_dwBytesTransfered, (PULONG_PTR)&m_pLoopSockContext, (LPOVERLAPPED*)&m_pLoopOverlapped, INFINITE);
 	if (!bRet)
 	{
@@ -122,7 +125,8 @@ bool PortCompleteWorker::OnWorkerMainLoop(int nElapse)
 		return false;
 	}
 
-	OPERATE_IO_CONTEXT* pIoContext = (LPOPERATE_IO_CONTEXT)m_pLoopOverlapped;
+	//OPERATE_IO_CONTEXT* pIoContext = (LPOPERATE_IO_CONTEXT)m_pLoopOverlapped;
+	OPERATE_IO_CONTEXT* pIoContext = CONTAINING_RECORD(m_pLoopOverlapped, OPERATE_IO_CONTEXT, overlap);
 	if ((0 == m_dwBytesTransfered) && ((pIoContext->operateType == ECPOT_RECIVE)||(pIoContext->operateType == ECPOT_SEND)))
 	{
 		//	断开连接
@@ -204,6 +208,13 @@ bool PortCompleteWorker::InitialListenSocket()
 		return false;
 	}
 
+	if (SOCKET_ERROR == listen(m_pListenContext->link, LISTEN_LINK_COUNT))
+	{
+		int nError = WSAGetLastError();
+		THREAD_ERROR("Thread Start Listen Error[%d]", nError);
+		return false;
+	}
+
 	//	Get Windows extra function pointer AcceptEx and GetAcceptExSockAddrs 
 	GUID guidAcceptEx = WSAID_ACCEPTEX;
 	DWORD dwBytes = 0;
@@ -226,6 +237,8 @@ bool PortCompleteWorker::InitialListenSocket()
 		return false;
 	}
 
+	m_pLoopOverlapped = new OVERLAPPED();
+
 	return true;
 }
 
@@ -234,21 +247,16 @@ bool PortCompleteWorker::StartListenConnect()
 	if (!CheckFunctionEnable(EPCTFT_LISTEN))
 		return true;
 
-	if (SOCKET_ERROR == listen(m_pListenContext->link, LISTEN_LINK_COUNT))
+	for (int i = 0; i < ACCEPT_POST_MAX; i++)
 	{
-		int nError = WSAGetLastError();
-		THREAD_ERROR("Thread Start Listen Error[%d]", nError);
-		return false;
+		//	投递第一个accept请求
+		OPERATE_IO_CONTEXT* pAcceptIoContext = m_pListenContext->GetNewIoOperate();
+		if (!PostAccept(m_pListenContext, pAcceptIoContext))
+		{
+			m_pListenContext->RemoveIoOperate(pAcceptIoContext);
+			return false;
+		}
 	}
-
-	//	投递第一个accept请求
-	OPERATE_IO_CONTEXT* pAcceptIoContext = m_pListenContext->GetNewIoOperate();
-	if (!PostAccept(m_pListenContext, pAcceptIoContext))
-	{
-		m_pListenContext->RemoveIoOperate(pAcceptIoContext);
-		return false;
-	}
-
 	THREAD_DEBUG("Worker thread start listen");
 	return true;
 }
@@ -266,10 +274,12 @@ bool PortCompleteWorker::DoAccept(OPERATE_SOCKET_CONTEXT* pSockContext, OPERATE_
 
 #pragma region Create new socket for recv client message or Send it to Core for rearrange
 	OPERATE_SOCKET_CONTEXT* pNewContext = new OPERATE_SOCKET_CONTEXT();
-	*pNewContext = *pSockContext;
+	//*pNewContext = *pSockContext;
+	pNewContext->link = pIoContext->link;
+	memcpy(&(pNewContext->clientAddr), pClientAddr, sizeof(SOCKADDR_IN));
 
 	//	todo create queue element to core
-	RegisterConnectSocket(pSockContext);
+	RegisterConnectSocket(pNewContext);
 #pragma endregion
 	
 	pIoContext->ResetDataBuff();
@@ -321,6 +331,7 @@ bool PortCompleteWorker::PostAccept(OPERATE_SOCKET_CONTEXT* pSockContext, OPERAT
 		return false;
 	}
 
+	m_pLoopSockContext = m_pListenContext;
 	LPFN_ACCEPTEX pFn = (LPFN_ACCEPTEX)m_pFnAcceptEx;
 	if (FALSE == pFn(pSockContext->link, pIoContext->link, pWBuff->buf, (pWBuff->len - ((sizeof(SOCKADDR_IN) + 16) * 2)),
 		sizeof(SOCKADDR_IN) + 16, sizeof(SOCKADDR_IN) + 16, &dwBytes, pOl))

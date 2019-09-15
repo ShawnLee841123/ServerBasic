@@ -16,7 +16,7 @@
 //	单IO操作数据		用于sockect的每一个操作
 typedef struct _PER_IO_CONTEXT
 {
-	WSAOVERLAPPED overlap;							//	每个重叠的操作结构，针对socket的每个操作，都要有一个	在结构中必须是第一个
+	OVERLAPPED overlap;						//	每个重叠的操作结构，针对socket的每个操作，都要有一个	在结构中必须是第一个
 	WSABUF buffer;								//	重叠操作参数缓冲区
 	char databuf[IO_BUFFER_SIZE];				//	字符缓冲区
 	int datalength;								//	字符串长度
