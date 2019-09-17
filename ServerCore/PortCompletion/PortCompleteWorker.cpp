@@ -279,12 +279,14 @@ bool PortCompleteWorker::DoAccept(OPERATE_SOCKET_CONTEXT* pSockContext, OPERATE_
 	memcpy(&(pNewContext->clientAddr), pClientAddr, sizeof(SOCKADDR_IN));
 
 	//	todo create queue element to core
-	RegisterConnectSocket(pNewContext);
+	//RegisterConnectSocket(pNewContext);
 #pragma endregion
 	
-	pIoContext->ResetDataBuff();
-	PostAccept(pSockContext, pIoContext);
+	m_pListenContext->RemoveIoOperate(pIoContext);
+	OPERATE_IO_CONTEXT* pNewIOContext = m_pListenContext->GetNewIoOperate();
+	PostAccept(m_pListenContext, pNewIOContext);
 
+	THREAD_DEBUG("Get one Accept");
 	return true;
 }
 
@@ -331,9 +333,17 @@ bool PortCompleteWorker::PostAccept(OPERATE_SOCKET_CONTEXT* pSockContext, OPERAT
 		return false;
 	}
 
-	m_pLoopSockContext = m_pListenContext;
+	//m_pLoopSockContext = m_pListenContext;
 	LPFN_ACCEPTEX pFn = (LPFN_ACCEPTEX)m_pFnAcceptEx;
-	if (FALSE == pFn(pSockContext->link, pIoContext->link, pWBuff->buf, (pWBuff->len - ((sizeof(SOCKADDR_IN) + 16) * 2)),
+	/*
+		这里有一个坑，第4个参数(pWBuff->len - ((sizeof(SOCKADDR_IN) + 16) * 2))，原意是表示pWBuff->buf用于存放数据的空间大小，如果这个值变成0，则Accept时不会等待数据，
+		直接返回。之前一直都无法监听到链接，是因为一直都在等待客户端Connect之后的数据消息。只要有消息发送上来，GetQueuedCompletionStatus就可以返回了。或者是将参数4变为0.这样
+		在客户端Connect的时候，是可以监听到的。
+	*/
+	//if (FALSE == pFn(pSockContext->link, pIoContext->link, pWBuff->buf, (pWBuff->len - ((sizeof(SOCKADDR_IN) + 16) * 2)),
+	//	sizeof(SOCKADDR_IN) + 16, sizeof(SOCKADDR_IN) + 16, &dwBytes, pOl))
+
+	if (FALSE == pFn(pSockContext->link, pIoContext->link, pWBuff->buf, 0,
 		sizeof(SOCKADDR_IN) + 16, sizeof(SOCKADDR_IN) + 16, &dwBytes, pOl))
 	{
 		int nErrorCode = WSAGetLastError();
