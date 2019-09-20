@@ -2,7 +2,7 @@
 #ifndef __PORT_COMPLETE_CORE_H__
 #define __PORT_COMPLETE_CORE_H__
 
-#define PCWORK_TCOUNT 4		//	完成端口线程数量
+#define PCWORK_TCOUNT 1		//	完成端口线程数量
 
 
 #include "../ServerCoreRoot/ServerCoreBase.h"
@@ -111,6 +111,7 @@ protected:
 	virtual bool OnQueueElementProcessEnter(UnLockQueueDataElementBase* pElement);
 #ifdef _WIN_
 	virtual bool OnSocketRegister(UnLockQueueDataElementBase* pElement);
+	virtual bool AddSocket2MsgThread(OPERATE_SOCKET_CONTEXT* pSockContext, int64 nThreadID);
 #endif
 	virtual bool OnSocketMessage(UnLockQueueDataElementBase* pElement);
 
@@ -123,6 +124,9 @@ protected:
 #endif
 	PortCompleteWorker*			m_arrWorkThread[PCWORK_TCOUNT];
 	void*						m_pCompletionPort;
+
+	std::map<int64, int32>						m_dicWorkerSocketCount;	//	线程上的Socket数量，计数使用，方便后续线程间的负载均衡
+	
 
 	//	读取队列
 	std::map<int32, UnLockQueueBase*>			m_dicCoreReadQueue;

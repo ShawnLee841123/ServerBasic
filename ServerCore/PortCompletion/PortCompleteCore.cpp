@@ -102,6 +102,9 @@ bool PortCompleteCore::OnStart()
 		m_dicCoreReadQueue.insert(std::pair<int32, UnLockQueueBase*>(nThreadID, pCoreReadQueue));
 		m_dicCoreWriteQueue.insert(std::pair<int32, UnLockQueueBase*>(nThreadID, pCoreWriteQueue));
 
+		//	初始化当前负载数量
+		m_dicWorkerSocketCount.insert(std::pair<int32, int32>(nThreadID, 0));
+
 		//	Register LogQueue
 		char strLogQueueName[64] = { 0 };
 		sprintf(strLogQueueName, "ThreadLogQueue[%d]", nThreadID);
@@ -141,6 +144,8 @@ bool PortCompleteCore::OnDestroy()
 	}
 
 	bRet &= ClearAllLink();
+
+	m_dicWorkerSocketCount.clear();
 #ifdef _WIN_
 	bRet &= ClearAllSockContext();
 	if (nullptr != m_pCompletionPort && INVALID_HANDLE_VALUE != m_pCompletionPort)
@@ -159,18 +164,33 @@ bool PortCompleteCore::OnDestroy()
 #ifdef _WIN_
 int64 PortCompleteCore::MakeStoreID()
 {
-	return m_dicSocktPool.size() + 1;
+	std::map<int64, int32>::iterator iter = m_dicWorkerSocketCount.begin();
+	int64 nMinThreadID = iter->first;
+	int32 nMinCount = iter->second;
+
+	//	找出负载最小的线程ID
+	for (; iter != m_dicWorkerSocketCount.end(); ++iter)
+	{
+		if (iter->second < nMinCount)
+			nMinThreadID = iter->first;
+	}
+
+	//return m_dicSocktPool.size() + 1;
+	return nMinThreadID;
 }
 
 bool PortCompleteCore::AddSocketContext(int64 nStoreID, OPERATE_SOCKET_CONTEXT* pContext)
 {
 	std::map<int64, OPERATE_SOCKET_CONTEXT*>::iterator iter = m_dicSocktPool.find(nStoreID);
+	int32 nThreadCurSocketCount = m_dicWorkerSocketCount[nStoreID];
+
 	if (iter == m_dicSocktPool.end())
 	{
 		OPERATE_SOCKET_CONTEXT* pNewContext = new OPERATE_SOCKET_CONTEXT();
 		*pNewContext = *pContext;
 		pNewContext->storeID = nStoreID;
 		m_dicSocktPool.insert(std::pair<int64, OPERATE_SOCKET_CONTEXT*>(nStoreID, pNewContext));
+		m_dicWorkerSocketCount[nStoreID] = nThreadCurSocketCount + 1;
 		return true;
 	}
 
@@ -337,6 +357,7 @@ bool PortCompleteCore::OnReadQueueTick(int nElapse)
 				eRet = EQORT_POP_INVALID_ELEMENT;
 
 			pDataElement->ClearElement();
+			//	暂时不确定这里是否会有内存泄漏
 
 		} while (eRet == EQORT_SUCCESS);
 	}
@@ -380,7 +401,7 @@ bool PortCompleteCore::OnSocketRegister(UnLockQueueDataElementBase* pElement)
 		return false;
 
 	//PortCompleteSocketInfo* pInfo = new PortCompleteSocketInfo();
-	//pInfo->pSocket = pData->pSocket;
+	//pInfo->pSocket = pData->pSocketContext->link;
 	//memcpy(pInfo->strSocketInfo, pData->strSocketInfo, sizeof(char)*IO_BUFFER_SIZE);
 
 	//pInfo->nLinkID = *pInfo->pSocket;
@@ -399,12 +420,32 @@ bool PortCompleteCore::OnSocketRegister(UnLockQueueDataElementBase* pElement)
 		return false;
 	}
 
+	bool bRet = true;
+	
 	int64 nID = MakeStoreID();
 	pSockContext->storeID = nID;
-	AddSocketContext(nID, pSockContext);
+	pSockContext->RecvThreadID = nID;
 
-	
-	return true;
+	bRet &= AddSocket2MsgThread(pSockContext, nID);
+	bRet &= AddSocketContext(nID, pSockContext);
+
+	return bRet;
+}
+
+bool PortCompleteCore::AddSocket2MsgThread(OPERATE_SOCKET_CONTEXT* pSockContext, int64 nThreadID)
+{
+	if (nullptr == pSockContext)
+		return false;
+
+	if (nThreadID < 0)
+		return false;
+
+	EQueueOperateResultType eType = EQORT_SUCCESS;
+	SocketRegisterData* pData = new SocketRegisterData();
+	pData->eRegisterType = EPCSRT_RECV;
+	pData->pSocketContext = pSockContext;
+	eType = m_dicCoreWriteQueue[nThreadID]->PushQueueElement(pData, sizeof(SocketRegisterData));
+	return EQORT_SUCCESS == eType;
 }
 #endif
 bool PortCompleteCore::OnSocketMessage(UnLockQueueDataElementBase* pElement)

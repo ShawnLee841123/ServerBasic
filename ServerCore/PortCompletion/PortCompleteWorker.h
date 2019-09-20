@@ -13,7 +13,7 @@ typedef struct _OVERLAPPED OVERLAPPED;
 class SocketRegisterData;
 #endif
 
-
+struct WorkerStoreInfo;
 
 class PortCompleteWorker : public ThreadBase
 {
@@ -58,6 +58,8 @@ protected:
 	OPERATE_SOCKET_CONTEXT*				m_pLoopSockContext;
 	OVERLAPPED*							m_pLoopOverlapped;
 #endif
+
+	std::map<uint32, OPERATE_SOCKET_CONTEXT*>	m_pStoreInfo;
 #pragma endregion
 
 };

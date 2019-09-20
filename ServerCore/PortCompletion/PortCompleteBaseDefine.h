@@ -7,10 +7,23 @@
 #include <vector>
 #include "PortCompleteQueueElementDataDefine.h"
 
+
+
 #ifdef _WIN_
 //#include <WinSock2.h>
 #include <WS2tcpip.h>
 #include <MSWSock.h>
+
+#ifdef _WIN_
+#define CORE_SOCKETADDR_IN SOCKADDR_IN
+#define CORE_SOCKADDR SOCKADDR
+#define CORE_SOCKET SOCKET
+#else
+#define CORE_SOCKETADDR_IN socketaddr_in
+#define CORE_SOCKADDR socketaddr
+#define CORE_SOCKET int
+#endif
+
 
 #define SAFE_RELEASE_SOCKET(a) {if (INVALID_SOCKET != a){closesocket(a); a = INVALID_SOCKET;}}
 //	单IO操作数据		用于sockect的每一个操作
@@ -21,7 +34,7 @@ typedef struct _PER_IO_CONTEXT
 	char databuf[IO_BUFFER_SIZE];				//	字符缓冲区
 	int datalength;								//	字符串长度
 	ECompletionPortOperateType operateType;		//	操作类型
-	SOCKET link;								//	此操作使用的socket
+	CORE_SOCKET link;								//	此操作使用的socket
 
 	_PER_IO_CONTEXT();
 	virtual ~_PER_IO_CONTEXT();
@@ -35,11 +48,11 @@ typedef struct _PER_IO_CONTEXT
 //	单句柄定义		//	用于单个socket
 typedef struct _PER_SOCKET_CONTEXT
 {
-	SOCKET								link;				//	客户端连接
-	SOCKADDR_IN							clientAddr;			//	客户端地址
+	CORE_SOCKET							link;				//	客户端连接
+	CORE_SOCKETADDR_IN					clientAddr;			//	客户端地址
 	int									RecvThreadID;		//	接收消息线程ID
 	int									SendThreadID;		//	发送消息线程ID
-	std::vector<LPOPERATE_IO_CONTEXT>		vIoContext;			//	IO操作队列
+	std::vector<LPOPERATE_IO_CONTEXT>	vIoContext;			//	IO操作队列
 	int64								storeID;
 
 	_PER_SOCKET_CONTEXT();
@@ -52,6 +65,17 @@ typedef struct _PER_SOCKET_CONTEXT
 }OPERATE_SOCKET_CONTEXT, *LPOPERATE_SOCKET_CONTEXT;
 
 #endif	//	_WIN_
+
+struct WorkerStoreInfo
+{
+	CORE_SOCKET				link;
+	CORE_SOCKETADDR_IN		Addr;
+	uint64					UUID;
+	//WorkerStoreInfo();
+	//~WorkerStoreInfo();
+};
+
+
 
 #endif	//	__PORT_COMPLETE_BASE_DEFINE_H__
 

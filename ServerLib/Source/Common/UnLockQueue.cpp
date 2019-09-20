@@ -183,7 +183,8 @@ EQueueOperateResultType UnLockQueueBase::PushQueueElement(UnLockQueueElementBase
 		return EQORT_PUSH_FULL_QUEUE;
 
 	m_arrData[m_nTail] = pElement;
-	pElement->OnInQueue();
+	//pElement->OnInQueue();
+	m_arrData[m_nTail]->OnInQueue();
 	m_nTail = (m_nTail + 1) % QUEUE_COUNT;
 	m_uElementCount++;
 	return EQORT_SUCCESS;

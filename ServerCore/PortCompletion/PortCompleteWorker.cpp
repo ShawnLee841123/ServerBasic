@@ -100,28 +100,36 @@ bool PortCompleteWorker::CheckFunctionEnable(PortCompletionThreadFunctionMask eM
 bool PortCompleteWorker::RegisterConnectSocket(OPERATE_SOCKET_CONTEXT* pSocketContext)
 {
 	SocketRegisterData* pData = new SocketRegisterData();
-	UnLockQueueDataElementBase oQueueEle;
+	UnLockQueueDataElementBase* pQueueEle = new UnLockQueueDataElementBase();
 	pData->eRegisterType = EPCSRT_STORE;
 	pData->pSocketContext = pSocketContext;
 	pData->nThreadID = m_nThreadID;
-	oQueueEle.SetData(pData, sizeof(SocketRegisterData));
+	pQueueEle->SetData(pData, sizeof(SocketRegisterData));
 
 	char strQueueName[64] = { 0 };
 	sprintf(strQueueName, "CoreReadQueue[%d]", m_nThreadID);
-	AddQueueElement(&oQueueEle, strQueueName);
+	AddQueueElement(pQueueEle, strQueueName);
 	return true;
 }
 
 bool PortCompleteWorker::OnWorkerMainLoop(int nElapse)
 {
 	//	注意最后的参数，这里有一个十分类似的宏INFINITY,我们需要的是INFINITE
-	
 	//BOOL bRet = GetQueuedCompletionStatus((HANDLE)m_pListenContext->link, (LPDWORD)&m_dwBytesTransfered, (PULONG_PTR)&m_pLoopSockContext, (LPOVERLAPPED*)&m_pLoopOverlapped, INFINITE);
 	BOOL bRet = GetQueuedCompletionStatus(m_pCompletionPort, (LPDWORD)&m_dwBytesTransfered, (PULONG_PTR)&m_pLoopSockContext, (LPOVERLAPPED*)&m_pLoopOverlapped, INFINITE);
 	if (!bRet)
 	{
 		//	测试程序只是些了链接，完成就断开了。这里会返回错误64，客户端断开
-		THREAD_ERROR("[PortCompleteWorker::OnWorkerMainLoop] Get completion port status faild. Error code[%d]", WSAGetLastError());
+		int nRet = WSAGetLastError();
+		if (nRet == 64)
+		{
+			//	客户端断开连接
+			OPERATE_IO_CONTEXT* pIoContext = CONTAINING_RECORD(m_pLoopOverlapped, OPERATE_IO_CONTEXT, overlap);
+			//	Tell Core to Close Socket
+			//	Shut down socket recv listen
+			return true;
+		}
+		THREAD_ERROR("[PortCompleteWorker::OnWorkerMainLoop] Get completion port status faild. Error code[%d]", nRet);
 		return false;
 	}
 
@@ -192,15 +200,16 @@ bool PortCompleteWorker::InitialListenSocket()
 	}
 
 	//	bind listen socket to server address
-	sockaddr_in serverAddr;
-	ZeroMemory(&serverAddr, sizeof(sockaddr_in));
+	//sockaddr_in serverAddr;
+	CORE_SOCKETADDR_IN serverAddr;
+	ZeroMemory(&serverAddr, sizeof(CORE_SOCKETADDR_IN));
 	//	字符串转Socket地址(地址不能带有端口号，不然报错)
 	inet_pton(AF_INET, "10.53.3.212", &(serverAddr.sin_addr));
 	serverAddr.sin_port = htons(11111);
 	//	family一定要设置，不然就10047了
 	serverAddr.sin_family = AF_INET;
 
-	if (SOCKET_ERROR == bind(m_pListenContext->link, (SOCKADDR*)&(serverAddr), sizeof(SOCKADDR)))
+	if (SOCKET_ERROR == bind(m_pListenContext->link, (CORE_SOCKADDR*)&(serverAddr), sizeof(CORE_SOCKADDR)))
 	{
 		int nError = WSAGetLastError();
 		THREAD_ERROR("Can not bind listen socket to server address. Error Code[%d]", nError);
@@ -269,7 +278,11 @@ bool PortCompleteWorker::DoAccept(OPERATE_SOCKET_CONTEXT* pSockContext, OPERATE_
 	int nClientAddrLen = sizeof(SOCKADDR_IN), nLocalAddrLen = sizeof(SOCKADDR_IN);
 	//	Get Socket information
 	LPFN_GETACCEPTEXSOCKADDRS pFn = (LPFN_GETACCEPTEXSOCKADDRS)m_pFnGetAcceptExSockAddrs;
-	pFn(pIoContext->buffer.buf, pIoContext->buffer.len - ((sizeof(SOCKADDR_IN) + 16) * 2),
+	//	下面这部分注释掉的原因和LPFN_ACCEPTEX的调用时一样的
+	//pFn(pIoContext->buffer.buf, pIoContext->buffer.len - ((sizeof(SOCKADDR_IN) + 16) * 2),
+	//	sizeof(SOCKADDR_IN) + 16, sizeof(SOCKADDR_IN) + 16, (LPSOCKADDR*)&pLocalAddr, &nLocalAddrLen, (LPSOCKADDR*)&pClientAddr, &nClientAddrLen);
+
+	pFn(pIoContext->buffer.buf, 0,
 		sizeof(SOCKADDR_IN) + 16, sizeof(SOCKADDR_IN) + 16, (LPSOCKADDR*)&pLocalAddr, &nLocalAddrLen, (LPSOCKADDR*)&pClientAddr, &nClientAddrLen);
 
 #pragma region Create new socket for recv client message or Send it to Core for rearrange
@@ -279,7 +292,7 @@ bool PortCompleteWorker::DoAccept(OPERATE_SOCKET_CONTEXT* pSockContext, OPERATE_
 	memcpy(&(pNewContext->clientAddr), pClientAddr, sizeof(SOCKADDR_IN));
 
 	//	todo create queue element to core
-	//RegisterConnectSocket(pNewContext);
+	RegisterConnectSocket(pNewContext);
 #pragma endregion
 	
 	m_pListenContext->RemoveIoOperate(pIoContext);
@@ -292,13 +305,22 @@ bool PortCompleteWorker::DoAccept(OPERATE_SOCKET_CONTEXT* pSockContext, OPERATE_
 
 bool PortCompleteWorker::DoRecv(OPERATE_SOCKET_CONTEXT* pSockContext, OPERATE_IO_CONTEXT* pIoContext)
 {
-	SOCKADDR_IN* pClientAddr = &pSockContext->clientAddr;
+	std::map<uint32, OPERATE_SOCKET_CONTEXT*>::iterator iter = m_pStoreInfo.find(pIoContext->link);
+	if (iter == m_pStoreInfo.end())
+	{
+		THREAD_DEBUG("Can not Find store socket[%d]", pIoContext->link);
+		return false;
+	}
+
+	//SOCKADDR_IN* pClientAddr = &pSockContext->clientAddr;
+	CORE_SOCKETADDR_IN* pClientAddr = &(iter->second->clientAddr);
 	
 #pragma region Send message content to Core for logic process
 	/*	
 		todo:
-			create unlock queue element 
-			send it to core
+			Create unlock queue element
+			Copy message content
+			Send it to core
 	*/
 
 	//	print message instead
@@ -310,7 +332,7 @@ bool PortCompleteWorker::DoRecv(OPERATE_SOCKET_CONTEXT* pSockContext, OPERATE_IO
 #pragma endregion
 
 	//	post new recv request
-	PostRecv(pSockContext, (OPERATE_IO_CONTEXT*)pSockContext->GetNewIoOperate());
+	PostRecv(iter->second, pIoContext);
 	return true;
 }
 
@@ -419,7 +441,13 @@ bool PortCompleteWorker::OnSocketRegisterData(SocketRegisterData* pData)
 	pIoContext->operateType = ECPOT_RECIVE;
 	pIoContext->link = pSockContext->link;
 
+	//WorkerStoreInfo* pStoreInfo = new WorkerStoreInfo();
+	//memcpy(&(pStoreInfo->Addr), &(pSockContext->clientAddr), sizeof(CORE_SOCKETADDR_IN));
+	//pStoreInfo->link = pSockContext->link;
+	m_pStoreInfo.insert(std::pair<uint32, OPERATE_SOCKET_CONTEXT*>(pIoContext->link, pSockContext));
+
 	pSockContext->RecvThreadID = m_nThreadID;
+
 	if (nullptr == CreateIoCompletionPort((HANDLE)pSockContext->link, m_pCompletionPort, (DWORD)&pSockContext, 0))
 	{
 		THREAD_ERROR("[PortCompleteWorker::OnSocketRegisterData] Bind socket[%d] completion port faild", pSockContext->storeID);
