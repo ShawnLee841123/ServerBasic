@@ -127,6 +127,7 @@ bool PortCompleteWorker::OnWorkerMainLoop(int nElapse)
 			OPERATE_IO_CONTEXT* pIoContext = CONTAINING_RECORD(m_pLoopOverlapped, OPERATE_IO_CONTEXT, overlap);
 			//	Tell Core to Close Socket
 			//	Shut down socket recv listen
+			THREAD_DEBUG("Client Socket[%d] Shut down!!!", pIoContext->link);
 			return true;
 		}
 		THREAD_ERROR("[PortCompleteWorker::OnWorkerMainLoop] Get completion port status faild. Error code[%d]", nRet);
