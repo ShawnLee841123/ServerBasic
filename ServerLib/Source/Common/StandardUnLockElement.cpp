@@ -2,6 +2,10 @@
 #include "../../Include/Common/StandardUnLockElement.h"
 #include "../../Include/Common/UnLockElementTypeDefine.h"
 #include <string>
+//	Linux下需要引入的库
+#ifndef _WIN_
+#include <string.h>
+#endif
 
 #pragma region Log data
 

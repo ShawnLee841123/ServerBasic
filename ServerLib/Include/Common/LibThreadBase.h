@@ -57,12 +57,6 @@ protected:
 #pragma endregion
 };
 
-//#define THREAD_ECHO(a) outputLog(a, 1)
-//#define THREAD_DEBUG(a) outputLog(a, 2)
-//#define THREAD_MSG(a) outputLog(a, 3)
-//#define THREAD_WARNNING(a) outputLog(a, 4)
-//#define THREAD_ERROR(a) outputLog(a, 5)
-
 #define THREAD_ECHO(a, ...) Output(1, a, ##__VA_ARGS__)
 #define THREAD_DEBUG(a, ...) Output(2, a, ##__VA_ARGS__)
 #define THREAD_MSG(a, ...) Output(3, a, ##__VA_ARGS__)

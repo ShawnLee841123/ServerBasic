@@ -4,7 +4,10 @@
 #include "../../Include/Common/UnLockElementTypeDefine.h"
 #include "../../Include/System/TimeSystem.h"
 #include "../../Include/System/FileSystem.h"
-
+//	Linux下需要引入的库
+#ifndef _WIN_
+#include <string.h>
+#endif
 
 char g_LogFlag[][LOG_FLAG_CHARACTER_MAX] =
 {

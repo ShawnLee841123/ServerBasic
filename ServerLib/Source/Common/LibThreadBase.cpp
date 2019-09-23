@@ -6,6 +6,11 @@
 #include "../../Include/System/TimeSystem.h"
 #include <stdarg.h>
 
+//	Linux下需要引入的库
+#ifndef _WIN_
+#include <string.h>
+#endif
+
 
 ThreadBase::ThreadBase() : m_eCurStatus(ESTST_NONE), m_nThreadID(-1), m_nLogQueueID(-1), m_nTickTime(0), m_uLastTimeStamp(0)
 {

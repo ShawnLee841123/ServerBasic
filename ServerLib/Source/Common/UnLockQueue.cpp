@@ -2,6 +2,10 @@
 #include "../../Include/Common/UnLockQueue.h"
 #include <stdlib.h>
 #include <string>
+//	Linux下需要引入的库
+#ifndef _WIN_
+#include <string.h>
+#endif
 
 #pragma region Queue element base
 UnLockQueueElementBase::UnLockQueueElementBase() : m_pData(nullptr), m_eStatus(EQEST_NONE), m_uDataSize(0)
