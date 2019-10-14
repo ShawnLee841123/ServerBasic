@@ -81,7 +81,7 @@ bool Windows_PathExists(const char* strName)
 	return Windows_CheckFilePermission(strName, EFCST_EXISTS) == EFPCR_SUCCESS;
 }
 
-//	创建文件(未实现)
+//	创建文件
 FILE* Windows_CreateFile(const char* strFileName)
 {
 	return fopen(strFileName, "w");
